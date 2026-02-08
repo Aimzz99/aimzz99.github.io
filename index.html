@@ -45,24 +45,19 @@
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <script>
-  // Set map bounds to match your Cloudinary image size
-  const mapWidth = 2048;  // Replace with your image width
-  const mapHeight = 2048; // Replace with your image height
+const imageUrl = 'https://res.cloudinary.com/dseicdpdj/image/upload/v1770575742/JPG_bebxhl.jpg';
+
+// Load the image first to get its dimensions
+const img = new Image();
+img.crossOrigin = 'anonymous'; // allows html2canvas to capture it
+img.onload = function() {
+  const mapWidth = img.width;
+  const mapHeight = img.height;
   const mapBounds = [[0, 0], [mapHeight, mapWidth]];
 
   // Initialize map
-  const map = L.map('map', {
-    crs: L.CRS.Simple,
-    minZoom: -2,
-    maxZoom: 2
-  });
-
-  // Load the Cloudinary map image
-  L.imageOverlay(
-    'https://res.cloudinary.com/dseicdpdj/image/upload/v1770575742/JPG_bebxhl.jpg',
-    mapBounds
-  ).addTo(map);
-
+  const map = L.map('map', { crs: L.CRS.Simple, minZoom: -2, maxZoom: 2 });
+  L.imageOverlay(imageUrl, mapBounds).addTo(map);
   map.fitBounds(mapBounds);
 
   // Markers and red path
@@ -108,7 +103,7 @@
     pathLine.setLatLngs([]);
   };
 
-  // Download map as PNG (works with CORS-enabled Cloudinary image)
+  // Download map as PNG
   document.getElementById('download-map').onclick = () => {
     html2canvas(document.getElementById('map'), { useCORS: true, backgroundColor: null }).then(canvas => {
       const link = document.createElement('a');
@@ -117,6 +112,8 @@
       link.click();
     });
   };
+};
+img.src = imageUrl;
 </script>
 
 </body>
