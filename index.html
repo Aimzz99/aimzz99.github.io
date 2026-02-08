@@ -112,7 +112,7 @@
   // Add marker on map click
   map.on('click', e => {
     const coords = [e.latlng.lat, e.latlng.lng];
-    const popupText = prompt("Enter popup text (optional):");
+    const popupText = prompt("Enter Marker Name:");
     addCustomMarker(coords, popupText || null);
   });
 
@@ -126,16 +126,6 @@
     markers.length = 0;
     pathLine.setLatLngs([]);
     localStorage.removeItem('gta5-map-markers');
-  };
-
-  // Download button (map image may not capture due to CORS, but markers persist)
-  document.getElementById('download-map').onclick = () => {
-    html2canvas(document.getElementById('map'), { useCORS: true, backgroundColor: null }).then(canvas => {
-      const link = document.createElement('a');
-      link.download = 'gta5-map.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    });
   };
 </script>
 
