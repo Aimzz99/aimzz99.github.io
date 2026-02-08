@@ -47,20 +47,26 @@
 <script>
 const imageUrl = 'https://res.cloudinary.com/dseicdpdj/image/upload/v1770575742/JPG_bebxhl.jpg';
 
-// Load the image first to get its dimensions
+// Preload image to get its dimensions
 const img = new Image();
-img.crossOrigin = 'anonymous'; // allows html2canvas to capture it
+img.crossOrigin = 'anonymous'; // Required for html2canvas
 img.onload = function() {
   const mapWidth = img.width;
   const mapHeight = img.height;
   const mapBounds = [[0, 0], [mapHeight, mapWidth]];
 
   // Initialize map
-  const map = L.map('map', { crs: L.CRS.Simple, minZoom: -2, maxZoom: 2 });
+  const map = L.map('map', {
+    crs: L.CRS.Simple,
+    minZoom: -2,
+    maxZoom: 2
+  });
+
+  // Add image overlay
   L.imageOverlay(imageUrl, mapBounds).addTo(map);
   map.fitBounds(mapBounds);
 
-  // Markers and red path
+  // Markers and path
   const markers = [];
   const pathLine = L.polyline([], { color: 'red' }).addTo(map);
 
@@ -85,10 +91,10 @@ img.onload = function() {
     updatePathLine();
   }
 
-  // Add marker on click
+  // Add marker on map click
   map.on('click', e => {
     const coords = [e.latlng.lat, e.latlng.lng];
-    const popupText = prompt("Enter Marker Name:");
+    const popupText = prompt("Enter popup text (optional):");
     addCustomMarker(coords, popupText || null);
   });
 
