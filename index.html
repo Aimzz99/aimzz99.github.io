@@ -56,9 +56,11 @@
     maxZoom: 2
   });
 
-  // Pull map image directly from the repo
-  L.imageOverlay('https://aimzz99.github.io/gta5-map.jpg', mapBounds).addTo(map);
-  
+  // Pull map image directly from your GitHub Pages repo
+  // Make sure gta5-map.jpg is in the root of the repo
+  L.imageOverlay('https://affa-rides.github.io/gta5-map.jpg', mapBounds).addTo(map);
+  map.fitBounds(mapBounds);
+
   const markers = [];
   const pathLine = L.polyline([], { color: 'red' }).addTo(map);
 
