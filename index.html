@@ -45,22 +45,27 @@
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <script>
-  // Map size (adjust to your image resolution)
+  // Map bounds (adjust if your image is a different size)
   const mapWidth = 2048;
   const mapHeight = 2048;
   const mapBounds = [[0, 0], [mapHeight, mapWidth]];
 
+  // Initialize map
   const map = L.map('map', {
     crs: L.CRS.Simple,
     minZoom: -2,
     maxZoom: 2
   });
 
-  // Pull map image directly from your GitHub Pages repo
-  // Make sure gta5-map.jpg is in the root of the repo
-L.imageOverlay('https://raw.githubusercontent.com/Aimzz99/aimzz99.github.io/main/JPG.jpg', mapBounds).addTo(map);
+  // Load image from raw GitHub URL
+  L.imageOverlay(
+    'https://raw.githubusercontent.com/Aimzz99/aimzz99.github.io/main/JPG.jpg',
+    mapBounds
+  ).addTo(map);
 
+  map.fitBounds(mapBounds);
 
+  // Markers and path
   const markers = [];
   const pathLine = L.polyline([], { color: 'red' }).addTo(map);
 
