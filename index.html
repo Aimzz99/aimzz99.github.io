@@ -93,7 +93,7 @@
   // Add marker on click
   map.on('click', e => {
     const coords = [e.latlng.lat, e.latlng.lng];
-    const popupText = prompt("Enter popup text (optional):");
+    const popupText = prompt("Enter Marker Name:");
     addCustomMarker(coords, popupText || null);
   });
 
