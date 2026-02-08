@@ -58,12 +58,14 @@
   });
 
   // Load image from raw GitHub URL
-  L.imageOverlay(
-  'https://raw.githubusercontent.com/Aimzz99/aimzz99.github.io/main/JPG.jpg',
+  const mapBounds = [[0, 0], [2048, 2048]]; // adjust if your image size is different
+
+L.imageOverlay(
+  'https://res.cloudinary.com/dseicdpdj/image/upload/v1770575742/JPG_bebxhl.jpg',
   mapBounds
 ).addTo(map);
 
-  map.fitBounds(mapBounds);
+map.fitBounds(mapBounds);
 
   // Markers and path
   const markers = [];
