@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>GTA 5 Interactive Map</title>
+  <title>GTA 5 Shared Map</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -41,35 +41,52 @@
   <button id="clear-markers">🗑️</button>
 </div>
 
+<!-- Leaflet -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<!-- html2canvas (optional download) -->
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
 <script>
-  // Hardcoded bounds matching your Cloudinary map image
-  const mapBounds = [[0,0],[2048,2048]];
+  // ====== FIREBASE CONFIG — Replace with your values ======
+ 
+const firebaseConfig = {
+  apiKey: "AIzaSyCKZOVLoh_oZVxoluw4g8bDOSnDBC-SnGs",
+  authDomain: "gta5mapmarkers.firebaseapp.com",
+  databaseURL: "https://gta5mapmarkers-default-rtdb.firebaseio.com",
+  projectId: "gta5mapmarkers",
+  storageBucket: "gta5mapmarkers.firebasestorage.app",
+  messagingSenderId: "884163348540",
+  appId: "1:884163348540:web:79c5cdb5ebbba99a1d5b39",
+  measurementId: "G-XPZT67CEDY"
+};
 
-  // Initialize Leaflet map
-  const map = L.map('map', { crs: L.CRS.Simple, minZoom:-2, maxZoom:2 });
+  // ====== MAP INIT ======
+  const mapBounds = [[0,0],[2048,2048]]; // Update if your map image is different
+  const map = L.map('map', {
+    crs: L.CRS.Simple,
+    minZoom: -2,
+    maxZoom: 2
+  });
 
-  // Add map overlay
-  L.imageOverlay(
-    'https://res.cloudinary.com/dseicdpdj/image/upload/v1770575742/JPG_bebxhl.jpg',
-    mapBounds
-  ).addTo(map);
+  // Change this to your Cloudinary hosted image
+  const mapImageUrl = 'https://res.cloudinary.com/dseicdpdj/image/upload/v1770575742/JPG_bebxhl.jpg';
 
+  L.imageOverlay(mapImageUrl, mapBounds).addTo(map);
   map.fitBounds(mapBounds);
 
-  // Markers and red path
+  // ====== SHARED MARKERS ======
   const markers = [];
   const pathLine = L.polyline([], { color: 'red' }).addTo(map);
 
   function updatePathLine() {
     pathLine.setLatLngs(markers.map(m => m.getLatLng()));
-    saveMarkers();
   }
 
-  function addCustomMarker(coords, popupText=null) {
-    const marker = L.marker(coords, {
+  function addMarkerToMap(data, id) {
+    const marker = L.marker([data.lat, data.lng], {
       draggable: true,
       icon: L.divIcon({
         className: '',
@@ -79,64 +96,73 @@
       })
     }).addTo(map);
 
-    if(popupText) marker.bindPopup(popupText);
-    marker.on('drag', updatePathLine);
+    if (data.popup) marker.bindPopup(data.popup);
+
+    // When the marker is dragged, update Firebase
+    marker.on('dragend', () => {
+      const pos = marker.getLatLng();
+      db.ref('markers/' + id).set({
+        lat: pos.lat,
+        lng: pos.lng,
+        popup: data.popup || ""
+      });
+      updatePathLine();
+    });
 
     markers.push(marker);
     updatePathLine();
   }
 
-  // Save markers to localStorage
-  function saveMarkers() {
-    const data = markers.map(m => {
-      const latlng = m.getLatLng();
-      return {
-        lat: latlng.lat,
-        lng: latlng.lng,
-        popup: m.getPopup() ? m.getPopup().getContent() : null
-      };
-    });
-    localStorage.setItem('gta5-map-markers', JSON.stringify(data));
-  }
-
-  // Load markers from localStorage
-  function loadMarkers() {
-    const saved = JSON.parse(localStorage.getItem('gta5-map-markers') || '[]');
-    saved.forEach(m => addCustomMarker([m.lat, m.lng], m.popup));
-  }
-
-  loadMarkers();
-
-  // Add marker on map click
-  map.on('click', e => {
-    const coords = [e.latlng.lat, e.latlng.lng];
-    const popupText = prompt("Enter Marker Name:");
-    addCustomMarker(coords, popupText || null);
-  });
-
-  // Zoom buttons
-  document.getElementById('zoom-in').onclick = () => map.zoomIn();
-  document.getElementById('zoom-out').onclick = () => map.zoomOut();
-
-  // Undo last marker button
-  document.getElementById('undo-marker').onclick = () => {
-    if(markers.length === 0) return;
-    const last = markers.pop();
-    map.removeLayer(last);
-    updatePathLine();
-  };
-
-  // Clear markers button
-  document.getElementById('clear-markers').onclick = () => {
+  // ====== LISTEN FOR DB CHANGES ======
+  db.ref('markers').on('value', snapshot => {
+    // Clear existing markers on map
     markers.forEach(m => map.removeLayer(m));
     markers.length = 0;
     pathLine.setLatLngs([]);
-    localStorage.removeItem('gta5-map-markers');
+
+    const all = snapshot.val();
+    if (all) {
+      Object.entries(all).forEach(([id, m]) => {
+        addMarkerToMap(m, id);
+      });
+    }
+  });
+
+  // ====== ADD MARKER TO DB WHEN USER CLICKS ======
+  map.on('click', e => {
+    const popupText = prompt("Enter Marker Name:") || "";
+    const newRef = db.ref('markers').push();
+    newRef.set({
+      lat: e.latlng.lat,
+      lng: e.latlng.lng,
+      popup: popupText
+    });
+  });
+
+  // ====== BUTTON LOGIC ======
+
+  document.getElementById('zoom-in').onclick = () => map.zoomIn();
+  document.getElementById('zoom-out').onclick = () => map.zoomOut();
+
+  // Undo (remove last marker in DB, shared for everyone)
+  document.getElementById('undo-marker').onclick = () => {
+    db.ref('markers').once('value', snapshot => {
+      const all = snapshot.val();
+      if (!all) return; // nothing
+      const keys = Object.keys(all);
+      const lastKey = keys[keys.length - 1];
+      db.ref('markers/' + lastKey).remove();
+    });
   };
 
-  // Download map button (markers persist, map may not due to CORS)
+  // Clear markers (remove all from DB)
+  document.getElementById('clear-markers').onclick = () => {
+    db.ref('markers').remove();
+  };
+
+  // (Optional) Download will still struggle with CORS
   document.getElementById('download-map').onclick = () => {
-    html2canvas(document.getElementById('map'), { useCORS: true, backgroundColor: null }).then(canvas => {
+    html2canvas(document.getElementById('map'), { useCORS:true, backgroundColor:null }).then(canvas => {
       const link = document.createElement('a');
       link.download = 'gta5-map.png';
       link.href = canvas.toDataURL('image/png');
