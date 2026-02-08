@@ -56,9 +56,9 @@
     maxZoom: 2
   });
 
-  // Embed your map image as Base64
-
-L.imageOverlay('JPG.jpg', mapBounds).addTo(map);
+  // Pull map image directly from the repo
+  L.imageOverlay('gta5-map.jpg', mapBounds).addTo(map);
+  map.fitBounds(mapBounds);
 
   const markers = [];
   const pathLine = L.polyline([], { color: 'red' }).addTo(map);
