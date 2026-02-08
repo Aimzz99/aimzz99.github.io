@@ -57,9 +57,7 @@
   });
 
   // Pull map image directly from the repo
-  L.imageOverlay('JPG.jpg', mapBounds).addTo(map);
-  map.fitBounds(mapBounds);
-
+  L.imageOverlay('https://affa-rides.github.io/gta5-map.jpg', mapBounds).addTo(map);
   const markers = [];
   const pathLine = L.polyline([], { color: 'red' }).addTo(map);
 
