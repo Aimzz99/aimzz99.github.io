@@ -45,28 +45,26 @@
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <script>
-const imageUrl = 'https://res.cloudinary.com/dseicdpdj/image/upload/v1770575742/JPG_bebxhl.jpg';
+  // Hardcoded bounds matching your Cloudinary image
+  const mapBounds = [[0,0],[2048,2048]];
 
-// Preload image to get its dimensions
-const img = new Image();
-img.crossOrigin = 'anonymous'; // Required for html2canvas
-img.onload = function() {
-  const mapWidth = img.width;
-  const mapHeight = img.height;
-  const mapBounds = [[0, 0], [mapHeight, mapWidth]];
-
-  // Initialize map
+  // Initialize Leaflet map
   const map = L.map('map', {
     crs: L.CRS.Simple,
     minZoom: -2,
     maxZoom: 2
   });
 
-  // Add image overlay
-  L.imageOverlay(imageUrl, mapBounds).addTo(map);
+  // Add the Cloudinary map overlay
+  L.imageOverlay(
+    'https://res.cloudinary.com/dseicdpdj/image/upload/v1770575742/JPG_bebxhl.jpg',
+    mapBounds
+  ).addTo(map);
+
+  // Fit map to image bounds
   map.fitBounds(mapBounds);
 
-  // Markers and path
+  // Markers and red path
   const markers = [];
   const pathLine = L.polyline([], { color: 'red' }).addTo(map);
 
@@ -91,7 +89,7 @@ img.onload = function() {
     updatePathLine();
   }
 
-  // Add marker on map click
+  // Add marker on click
   map.on('click', e => {
     const coords = [e.latlng.lat, e.latlng.lng];
     const popupText = prompt("Enter popup text (optional):");
@@ -118,8 +116,6 @@ img.onload = function() {
       link.click();
     });
   };
-};
-img.src = imageUrl;
 </script>
 
 </body>
