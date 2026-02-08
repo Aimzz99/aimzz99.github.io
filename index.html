@@ -37,24 +37,22 @@
 <div class="custom-controls">
   <button id="zoom-in">+</button>
   <button id="zoom-out">−</button>
+  <button id="undo-marker">↩️</button>
   <button id="clear-markers">🗑️</button>
+  <button id="download-map">📥</button>
 </div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <script>
-  // Hardcoded bounds matching Cloudinary map image
+  // Hardcoded bounds matching your Cloudinary map image
   const mapBounds = [[0,0],[2048,2048]];
 
-  // Initialize map
-  const map = L.map('map', {
-    crs: L.CRS.Simple,
-    minZoom: -2,
-    maxZoom: 2
-  });
+  // Initialize Leaflet map
+  const map = L.map('map', { crs: L.CRS.Simple, minZoom:-2, maxZoom:2 });
 
-  // Add map image overlay
+  // Add map overlay
   L.imageOverlay(
     'https://res.cloudinary.com/dseicdpdj/image/upload/v1770575742/JPG_bebxhl.jpg',
     mapBounds
@@ -71,19 +69,20 @@
     saveMarkers();
   }
 
-  function addCustomMarker(coords, popupText = null) {
+  function addCustomMarker(coords, popupText=null) {
     const marker = L.marker(coords, {
       draggable: true,
       icon: L.divIcon({
         className: '',
         html: '<div style="width:12px;height:12px;background:red;border-radius:50%;border:1px solid black;"></div>',
-        iconSize: [12, 12],
-        iconAnchor: [6, 6]
+        iconSize: [12,12],
+        iconAnchor: [6,6]
       })
     }).addTo(map);
 
-    if (popupText) marker.bindPopup(popupText);
+    if(popupText) marker.bindPopup(popupText);
     marker.on('drag', updatePathLine);
+
     markers.push(marker);
     updatePathLine();
   }
@@ -112,7 +111,7 @@
   // Add marker on map click
   map.on('click', e => {
     const coords = [e.latlng.lat, e.latlng.lng];
-    const popupText = prompt("Enter Marker Name:");
+    const popupText = prompt("Enter popup text (optional):");
     addCustomMarker(coords, popupText || null);
   });
 
@@ -120,12 +119,30 @@
   document.getElementById('zoom-in').onclick = () => map.zoomIn();
   document.getElementById('zoom-out').onclick = () => map.zoomOut();
 
-  // Clear markers
+  // Undo last marker button
+  document.getElementById('undo-marker').onclick = () => {
+    if(markers.length === 0) return;
+    const last = markers.pop();
+    map.removeLayer(last);
+    updatePathLine();
+  };
+
+  // Clear markers button
   document.getElementById('clear-markers').onclick = () => {
     markers.forEach(m => map.removeLayer(m));
     markers.length = 0;
     pathLine.setLatLngs([]);
     localStorage.removeItem('gta5-map-markers');
+  };
+
+  // Download map button (markers persist, map may not due to CORS)
+  document.getElementById('download-map').onclick = () => {
+    html2canvas(document.getElementById('map'), { useCORS: true, backgroundColor: null }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = 'gta5-map.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
   };
 </script>
 
