@@ -43,34 +43,36 @@
 
 <!-- Leaflet -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<!-- html2canvas for optional download -->
+<!-- html2canvas (optional download) -->
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
 <script>
-  // ===== Firebase config =====
+  // ====== FIREBASE CONFIG ======
   const firebaseConfig = {
-  apiKey: "AIzaSyCKZOVLoh_oZVxoluw4g8bDOSnDBC-SnGs",
-  authDomain: "gta5mapmarkers.firebaseapp.com",
-  databaseURL: "https://gta5mapmarkers-default-rtdb.firebaseio.com",
-  projectId: "gta5mapmarkers",
-  storageBucket: "gta5mapmarkers.firebasestorage.app",
-  messagingSenderId: "884163348540",
-  appId: "1:884163348540:web:79c5cdb5ebbba99a1d5b39",
-  measurementId: "G-XPZT67CEDY"
-};
+    apiKey: "AIzaSyAllMoqwDHMBbLKgFZRjwN4XAlB4eFuJbw",
+    authDomain: "hamc-deb8b.firebaseapp.com",
+    databaseURL: "https://hamc-deb8b-default-rtdb.firebaseio.com",
+    projectId: "hamc-deb8b",
+    storageBucket: "hamc-deb8b.firebasestorage.app",
+    messagingSenderId: "614411913717",
+    appId: "1:614411913717:web:f9e83e748674efb4a278bc",
+    measurementId: "G-S7CTVN01GV"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-  // ===== Leaflet map setup =====
+  // ====== MAP SETUP ======
   const mapBounds = [[0,0],[2048,2048]];
   const map = L.map('map', { crs: L.CRS.Simple, minZoom:-2, maxZoom:2 });
   L.imageOverlay('https://res.cloudinary.com/dseicdpdj/image/upload/v1770575742/JPG_bebxhl.jpg', mapBounds).addTo(map);
   map.fitBounds(mapBounds);
 
-  // ===== Markers & path =====
+  // ====== MARKERS & RED PATH ======
   const pathLine = L.polyline([], { color: 'red' }).addTo(map);
-  const markerMap = {}; // Firebase key → Leaflet marker
+  const markerMap = {}; // key → Leaflet marker
 
   function updatePathLine() {
     pathLine.setLatLngs(Object.values(markerMap).map(m => m.getLatLng()));
@@ -103,7 +105,7 @@
     updatePathLine();
   }
 
-  // ===== Listen for Firebase updates =====
+  // ====== LISTEN FOR CHANGES IN DATABASE ======
   db.ref('markers').on('value', snapshot => {
     const data = snapshot.val() || {};
 
@@ -125,9 +127,9 @@
     updatePathLine();
   });
 
-  // ===== Add marker on map click =====
+  // ====== ADD MARKER ON MAP CLICK ======
   map.on('click', e => {
-    const popupText = prompt("Enter Marker Name:") || '';
+    const popupText = prompt("Enter popup text (optional):") || '';
     const newRef = db.ref('markers').push();
     newRef.set({
       lat: e.latlng.lat,
@@ -136,11 +138,11 @@
     });
   });
 
-  // ===== Zoom buttons =====
+  // ====== ZOOM BUTTONS ======
   document.getElementById('zoom-in').onclick = () => map.zoomIn();
   document.getElementById('zoom-out').onclick = () => map.zoomOut();
 
-  // ===== Undo last marker =====
+  // ====== UNDO LAST MARKER ======
   document.getElementById('undo-marker').onclick = () => {
     db.ref('markers').once('value', snapshot => {
       const all = snapshot.val();
@@ -151,12 +153,12 @@
     });
   };
 
-  // ===== Clear all markers =====
+  // ====== CLEAR ALL MARKERS ======
   document.getElementById('clear-markers').onclick = () => {
     db.ref('markers').remove();
   };
 
-  // ===== Download map (optional) =====
+  // ====== DOWNLOAD MAP (OPTIONAL) ======
   document.getElementById('download-map').onclick = () => {
     html2canvas(document.getElementById('map'), { useCORS:true, backgroundColor:null }).then(canvas => {
       const link = document.createElement('a');
