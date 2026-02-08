@@ -39,7 +39,6 @@
   <button id="zoom-out">−</button>
   <button id="undo-marker">↩️</button>
   <button id="clear-markers">🗑️</button>
-  <button id="download-map">📥</button>
 </div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -111,7 +110,7 @@
   // Add marker on map click
   map.on('click', e => {
     const coords = [e.latlng.lat, e.latlng.lng];
-    const popupText = prompt("Enter popup text (optional):");
+    const popupText = prompt("Enter Marker Name:");
     addCustomMarker(coords, popupText || null);
   });
 
