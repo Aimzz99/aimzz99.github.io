@@ -45,23 +45,22 @@
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <script>
-  // Hardcoded bounds matching your Cloudinary image
+  // Hardcoded bounds matching Cloudinary map image
   const mapBounds = [[0,0],[2048,2048]];
 
-  // Initialize Leaflet map
+  // Initialize map
   const map = L.map('map', {
     crs: L.CRS.Simple,
     minZoom: -2,
     maxZoom: 2
   });
 
-  // Add the Cloudinary map overlay
+  // Add map image overlay
   L.imageOverlay(
     'https://res.cloudinary.com/dseicdpdj/image/upload/v1770575742/JPG_bebxhl.jpg',
     mapBounds
   ).addTo(map);
 
-  // Fit map to image bounds
   map.fitBounds(mapBounds);
 
   // Markers and red path
@@ -70,6 +69,7 @@
 
   function updatePathLine() {
     pathLine.setLatLngs(markers.map(m => m.getLatLng()));
+    saveMarkers();
   }
 
   function addCustomMarker(coords, popupText = null) {
@@ -89,7 +89,28 @@
     updatePathLine();
   }
 
-  // Add marker on click
+  // Save markers to localStorage
+  function saveMarkers() {
+    const data = markers.map(m => {
+      const latlng = m.getLatLng();
+      return {
+        lat: latlng.lat,
+        lng: latlng.lng,
+        popup: m.getPopup() ? m.getPopup().getContent() : null
+      };
+    });
+    localStorage.setItem('gta5-map-markers', JSON.stringify(data));
+  }
+
+  // Load markers from localStorage
+  function loadMarkers() {
+    const saved = JSON.parse(localStorage.getItem('gta5-map-markers') || '[]');
+    saved.forEach(m => addCustomMarker([m.lat, m.lng], m.popup));
+  }
+
+  loadMarkers();
+
+  // Add marker on map click
   map.on('click', e => {
     const coords = [e.latlng.lat, e.latlng.lng];
     const popupText = prompt("Enter popup text (optional):");
@@ -105,9 +126,10 @@
     markers.forEach(m => map.removeLayer(m));
     markers.length = 0;
     pathLine.setLatLngs([]);
+    localStorage.removeItem('gta5-map-markers');
   };
 
-  // Download map as PNG
+  // Download button (map image may not capture due to CORS, but markers persist)
   document.getElementById('download-map').onclick = () => {
     html2canvas(document.getElementById('map'), { useCORS: true, backgroundColor: null }).then(canvas => {
       const link = document.createElement('a');
