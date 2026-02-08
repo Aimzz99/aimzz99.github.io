@@ -39,50 +39,43 @@
   <button id="zoom-out">−</button>
   <button id="undo-marker">↩️</button>
   <button id="clear-markers">🗑️</button>
+  <button id="download-map">📥</button>
 </div>
 
 <!-- Leaflet -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<!-- html2canvas (optional download) -->
+<!-- html2canvas for optional download -->
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
 <script>
-  // ====== FIREBASE CONFIG — Replace with your values ======
- 
-const firebaseConfig = {
-  apiKey: "AIzaSyCKZOVLoh_oZVxoluw4g8bDOSnDBC-SnGs",
-  authDomain: "gta5mapmarkers.firebaseapp.com",
-  databaseURL: "https://gta5mapmarkers-default-rtdb.firebaseio.com",
-  projectId: "gta5mapmarkers",
-  storageBucket: "gta5mapmarkers.firebasestorage.app",
-  messagingSenderId: "884163348540",
-  appId: "1:884163348540:web:79c5cdb5ebbba99a1d5b39",
-  measurementId: "G-XPZT67CEDY"
-};
+  // ===== Firebase config =====
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-  // ====== MAP INIT ======
-  const mapBounds = [[0,0],[2048,2048]]; // Update if your map image is different
-  const map = L.map('map', {
-    crs: L.CRS.Simple,
-    minZoom: -2,
-    maxZoom: 2
-  });
-
-  // Change this to your Cloudinary hosted image
-  const mapImageUrl = 'https://res.cloudinary.com/dseicdpdj/image/upload/v1770575742/JPG_bebxhl.jpg';
-
-  L.imageOverlay(mapImageUrl, mapBounds).addTo(map);
+  // ===== Leaflet map setup =====
+  const mapBounds = [[0,0],[2048,2048]];
+  const map = L.map('map', { crs: L.CRS.Simple, minZoom:-2, maxZoom:2 });
+  L.imageOverlay('https://res.cloudinary.com/dseicdpdj/image/upload/v1770575742/JPG_bebxhl.jpg', mapBounds).addTo(map);
   map.fitBounds(mapBounds);
 
-  // ====== SHARED MARKERS ======
-  const markers = [];
+  // ===== Markers & path =====
   const pathLine = L.polyline([], { color: 'red' }).addTo(map);
+  const markerMap = {}; // Firebase key → Leaflet marker
 
   function updatePathLine() {
-    pathLine.setLatLngs(markers.map(m => m.getLatLng()));
+    pathLine.setLatLngs(Object.values(markerMap).map(m => m.getLatLng()));
   }
 
   function addMarkerToMap(data, id) {
@@ -96,41 +89,47 @@ const firebaseConfig = {
       })
     }).addTo(map);
 
-    if (data.popup) marker.bindPopup(data.popup);
+    if(data.popup) marker.bindPopup(data.popup);
 
-    // When the marker is dragged, update Firebase
     marker.on('dragend', () => {
       const pos = marker.getLatLng();
       db.ref('markers/' + id).set({
         lat: pos.lat,
         lng: pos.lng,
-        popup: data.popup || ""
+        popup: data.popup || ''
       });
       updatePathLine();
     });
 
-    markers.push(marker);
+    markerMap[id] = marker;
     updatePathLine();
   }
 
-  // ====== LISTEN FOR DB CHANGES ======
+  // ===== Listen for Firebase updates =====
   db.ref('markers').on('value', snapshot => {
-    // Clear existing markers on map
-    markers.forEach(m => map.removeLayer(m));
-    markers.length = 0;
-    pathLine.setLatLngs([]);
+    const data = snapshot.val() || {};
 
-    const all = snapshot.val();
-    if (all) {
-      Object.entries(all).forEach(([id, m]) => {
-        addMarkerToMap(m, id);
-      });
+    // Remove deleted markers
+    for(const id in markerMap){
+      if(!data[id]){
+        map.removeLayer(markerMap[id]);
+        delete markerMap[id];
+      }
     }
+
+    // Add new markers
+    for(const id in data){
+      if(!markerMap[id]){
+        addMarkerToMap(data[id], id);
+      }
+    }
+
+    updatePathLine();
   });
 
-  // ====== ADD MARKER TO DB WHEN USER CLICKS ======
+  // ===== Add marker on map click =====
   map.on('click', e => {
-    const popupText = prompt("Enter Marker Name:") || "";
+    const popupText = prompt("Enter popup text (optional):") || '';
     const newRef = db.ref('markers').push();
     newRef.set({
       lat: e.latlng.lat,
@@ -139,28 +138,27 @@ const firebaseConfig = {
     });
   });
 
-  // ====== BUTTON LOGIC ======
-
+  // ===== Zoom buttons =====
   document.getElementById('zoom-in').onclick = () => map.zoomIn();
   document.getElementById('zoom-out').onclick = () => map.zoomOut();
 
-  // Undo (remove last marker in DB, shared for everyone)
+  // ===== Undo last marker =====
   document.getElementById('undo-marker').onclick = () => {
     db.ref('markers').once('value', snapshot => {
       const all = snapshot.val();
-      if (!all) return; // nothing
+      if(!all) return;
       const keys = Object.keys(all);
-      const lastKey = keys[keys.length - 1];
+      const lastKey = keys[keys.length-1];
       db.ref('markers/' + lastKey).remove();
     });
   };
 
-  // Clear markers (remove all from DB)
+  // ===== Clear all markers =====
   document.getElementById('clear-markers').onclick = () => {
     db.ref('markers').remove();
   };
 
-  // (Optional) Download will still struggle with CORS
+  // ===== Download map (optional) =====
   document.getElementById('download-map').onclick = () => {
     html2canvas(document.getElementById('map'), { useCORS:true, backgroundColor:null }).then(canvas => {
       const link = document.createElement('a');
