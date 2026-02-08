@@ -45,9 +45,9 @@
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <script>
-  // Map bounds (adjust if your image is a different size)
-  const mapWidth = 2048;
-  const mapHeight = 2048;
+  // Set map bounds to match your Cloudinary image size
+  const mapWidth = 2048;  // Replace with your image width
+  const mapHeight = 2048; // Replace with your image height
   const mapBounds = [[0, 0], [mapHeight, mapWidth]];
 
   // Initialize map
@@ -57,14 +57,15 @@
     maxZoom: 2
   });
 
-  // Load image from raw GitHub URL
-  const mapBounds = [[0, 0], [2048, 2048]]; // adjust if your image size is different
-L.imageOverlay(
-  'https://raw.githubusercontent.com/Aimzz99/aimzz99.github.io/main/JPG.jpg.jpg',
-  mapBounds
-).addTo(map);
+  // Load the Cloudinary map image
+  L.imageOverlay(
+    'https://res.cloudinary.com/dseicdpdj/image/upload/v1770575742/JPG_bebxhl.jpg',
+    mapBounds
+  ).addTo(map);
 
-  // Markers and path
+  map.fitBounds(mapBounds);
+
+  // Markers and red path
   const markers = [];
   const pathLine = L.polyline([], { color: 'red' }).addTo(map);
 
@@ -107,7 +108,7 @@ L.imageOverlay(
     pathLine.setLatLngs([]);
   };
 
-  // Download map as PNG
+  // Download map as PNG (works with CORS-enabled Cloudinary image)
   document.getElementById('download-map').onclick = () => {
     html2canvas(document.getElementById('map'), { useCORS: true, backgroundColor: null }).then(canvas => {
       const link = document.createElement('a');
