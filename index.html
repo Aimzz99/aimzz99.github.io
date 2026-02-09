@@ -39,6 +39,7 @@
   <button id="zoom-out">−</button>
   <button id="undo-marker">↩️</button>
   <button id="clear-markers">🗑️</button>
+  <button id="unlock-map">🔒</button>
 </div>
 
 <!-- Leaflet -->
@@ -69,6 +70,39 @@
   const map = L.map('map', { crs: L.CRS.Simple, minZoom:-2, maxZoom:2 });
   L.imageOverlay('https://res.cloudinary.com/dseicdpdj/image/upload/v1770575742/JPG_bebxhl.jpg', mapBounds).addTo(map);
   map.fitBounds(mapBounds);
+  
+  const MAP_PASSWORD = "affa1967"; // change this
+let unlocked = false;
+
+function lockControls() {
+  document.querySelectorAll('.custom-controls button:not(#unlock-map)')
+    .forEach(b => b.disabled = true);
+  unlocked = false;
+}
+
+function unlockControls() {
+  document.querySelectorAll('.custom-controls button')
+    .forEach(b => b.disabled = false);
+  unlocked = true;
+  sessionStorage.setItem('mapUnlocked', 'true');
+}
+
+document.getElementById('unlock-map').onclick = () => {
+  const input = prompt("Enter password:");
+  if(input === MAP_PASSWORD){
+    unlockControls();
+    alert("Map unlocked");
+  } else {
+    alert("Wrong password");
+  }
+};
+
+// Lock on load
+if(sessionStorage.getItem('mapUnlocked') === 'true'){
+  unlockControls();
+} else {
+  lockControls();
+}
 
   // ====== MARKERS & RED PATH ======
   const pathLine = L.polyline([], { color: 'red' }).addTo(map);
@@ -129,14 +163,16 @@
 
   // ====== ADD MARKER ON MAP CLICK ======
   map.on('click', e => {
-    const popupText = prompt("Enter popup text (optional):") || '';
-    const newRef = db.ref('markers').push();
-    newRef.set({
-      lat: e.latlng.lat,
-      lng: e.latlng.lng,
-      popup: popupText
-    });
+  if(!unlocked) return;
+
+  const popupText = prompt("Enter popup text (optional):") || '';
+  const newRef = db.ref('markers').push();
+  newRef.set({
+    lat: e.latlng.lat,
+    lng: e.latlng.lng,
+    popup: popupText
   });
+});
 
   // ====== ZOOM BUTTONS ======
   document.getElementById('zoom-in').onclick = () => map.zoomIn();
