@@ -163,7 +163,13 @@ if(sessionStorage.getItem('mapUnlocked') === 'true'){
 
   // ====== ADD MARKER ON MAP CLICK ======
   map.on('click', e => {
-  if(!unlocked) return;
+  if (!unlocked) {
+    L.popup()
+      .setLatLng(e.latlng)
+      .setContent("🔒 You need a password to place markers")
+      .openOn(map);
+    return;
+  }
 
   const popupText = prompt("Enter popup text (optional):") || '';
   const newRef = db.ref('markers').push();
